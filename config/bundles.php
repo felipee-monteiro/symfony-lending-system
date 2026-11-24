@@ -1,13 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
+use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Bundle\TwigBundle\TwigBundle;
+use Symfony\UX\Toolkit\UXToolkitBundle;
+use Symfony\UX\TwigComponent\TwigComponentBundle;
+use Symfonycasts\TailwindBundle\SymfonycastsTailwindBundle;
+use TalesFromADev\Twig\Extra\Tailwind\Bridge\Symfony\Bundle\TalesFromADevTwigExtraTailwindBundle;
+use Twig\Extra\TwigExtraBundle\TwigExtraBundle;
+
 return [
-    Symfony\Bundle\FrameworkBundle\FrameworkBundle::class => ['all' => true],
-    Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class => ['all' => true],
-    Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle::class => ['all' => true],
-    Symfony\Bundle\TwigBundle\TwigBundle::class => ['all' => true],
-    Symfonycasts\TailwindBundle\SymfonycastsTailwindBundle::class => ['all' => true],
-    Symfony\UX\TwigComponent\TwigComponentBundle::class => ['all' => true],
-    Symfony\UX\Toolkit\UXToolkitBundle::class => ['dev' => true, 'test' => true],
-    TalesFromADev\Twig\Extra\Tailwind\Bridge\Symfony\Bundle\TalesFromADevTwigExtraTailwindBundle::class => ['all' => true],
-    Twig\Extra\TwigExtraBundle\TwigExtraBundle::class => ['all' => true],
+    FrameworkBundle::class                      => ['all' => true],
+    DoctrineBundle::class                       => ['all' => true],
+    DoctrineMigrationsBundle::class             => ['all' => true],
+    TwigBundle::class                           => ['all' => true],
+    SymfonycastsTailwindBundle::class           => ['all' => true],
+    TwigComponentBundle::class                  => ['all' => true],
+    UXToolkitBundle::class                      => ['dev' => true, 'test' => true],
+    TalesFromADevTwigExtraTailwindBundle::class => ['all' => true],
+    TwigExtraBundle::class                      => ['all' => true],
 ];

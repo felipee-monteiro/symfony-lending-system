@@ -89,20 +89,37 @@
                                     </button>
                                 {{ form_end(lendForm) }}
                             {% else %}
-                                <div class="flex items-center justify-end gap-2">
-                                    <form method="post" action="{{ path('app_items_return', {id: row.itemId}) }}">
-                                        <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
-                                            Devolver
-                                        </button>
-                                    </form>
+                                <div class="flex flex-col items-end gap-2">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <form method="post" action="{{ path('app_items_return', {id: row.itemId}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                                            <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
+                                                Devolver
+                                            </button>
+                                        </form>
 
-                                    {% set renewForm = renewForms[row.itemId] %}
-                                    {{ form_start(renewForm, {attr: {class: 'flex items-center gap-2'}}) }}
-                                        {{ form_widget(renewForm.newDueAt, {attr: {class: 'flex h-9 w-36 rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900'}}) }}
-                                        <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
-                                            Renovar
-                                        </button>
-                                    {{ form_end(renewForm) }}
+                                        {% set renewForm = renewForms[row.itemId] %}
+                                        {{ form_start(renewForm, {attr: {class: 'flex items-center gap-2'}}) }}
+                                            {{ form_widget(renewForm.newDueAt, {attr: {class: 'flex h-9 w-36 rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900'}}) }}
+                                            <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
+                                                Renovar
+                                            </button>
+                                        {{ form_end(renewForm) }}
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-2">
+                                        <span class="text-xs font-medium text-slate-500 whitespace-nowrap">
+                                            Na fila: {{ row.queueCount }}
+                                        </span>
+
+                                        {% set reserveForm = reserveForms[row.itemId] %}
+                                        {{ form_start(reserveForm, {attr: {class: 'flex items-center gap-2'}}) }}
+                                            {{ form_widget(reserveForm.borrowerId, {attr: {placeholder: 'Quem reserva?', class: 'flex h-9 w-32 rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900'}}) }}
+                                            <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md bg-slate-900 px-3 text-sm font-medium text-slate-50 shadow transition-colors hover:bg-slate-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
+                                                Reservar
+                                            </button>
+                                        {{ form_end(reserveForm) }}
+                                    </div>
                                 </div>
                             {% endif %}
                         </td>

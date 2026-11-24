@@ -8,15 +8,18 @@ use App\Application\Item\LendItemHandler;
 use App\Application\Item\RegisterItemHandler;
 use App\Application\Item\RenewLoanHandler;
 use App\Application\Item\ReturnItemHandler;
+use App\Application\Reservation\ReserveItemHandler;
 use App\Domain\Item\BorrowerId;
 use App\Domain\Item\ItemId;
 use App\Domain\Item\ItemStatus;
 use App\DTO\Input\LendItemInput;
 use App\DTO\Input\RegisterItemInput;
 use App\DTO\Input\RenewLoanInput;
+use App\DTO\Input\ReserveItemInput;
 use App\Form\LendItemType;
 use App\Form\RegisterItemType;
 use App\Form\RenewLoanType;
+use App\Form\ReserveItemType;
 use App\ReadModel\ItemFilter;
 use App\ReadModel\ItemOverviewQuery;
 use App\ReadModel\ItemRow;
@@ -32,9 +35,6 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * Thin HTTP layer: it validates input, calls one handler or one read model, and
  * redirects. No business rule lives here (domain exceptions become flash messages).
- *
- * Messenger is not installed, so the handlers are called directly instead of being
- * dispatched as commands (the plan's fallback for this step).
  */
 final class ItemController extends AbstractController
 {
@@ -44,6 +44,7 @@ final class ItemController extends AbstractController
         private readonly LendItemHandler $lendItem,
         private readonly ReturnItemHandler $returnItem,
         private readonly RenewLoanHandler $renewLoan,
+        private readonly ReserveItemHandler $reserveItem,
         private readonly FormFactoryInterface $forms,
     ) {}
 
@@ -65,10 +66,11 @@ final class ItemController extends AbstractController
         };
 
         return $this->render('item/index.html.twig', [
-            'items'      => $items,
-            'filter'     => $filter,
-            'lendForms'  => $this->lendForms($items),
-            'renewForms' => $this->renewForms($items),
+            'items'        => $items,
+            'filter'       => $filter,
+            'lendForms'    => $this->lendForms($items),
+            'renewForms'   => $this->renewForms($items),
+            'reserveForms' => $this->reserveForms($items),
         ]);
     }
 
@@ -119,9 +121,38 @@ final class ItemController extends AbstractController
         return $this->redirectToRoute('app_items_index');
     }
 
-    #[Route('/items/{id}/return', name: 'app_items_return', methods: ['POST'])]
-    public function returnItem(string $id): Response
+    #[Route('/items/{id}/reservations', name: 'app_items_reserve', methods: ['POST'])]
+    public function reserve(string $id, Request $request): Response
     {
+        $form = $this->forms->createNamed('reserve_'.$id, ReserveItemType::class);
+        $form->handleRequest($request);
+
+        if (! $form->isSubmitted() || ! $form->isValid()) {
+            return $this->rejectForm($form);
+        }
+
+        /** @var ReserveItemInput $input */
+        $input = $form->getData();
+
+        ($this->reserveItem)(
+            ItemId::fromString($id),
+            BorrowerId::fromString((string) $input->borrowerId),
+        );
+
+        $this->addFlash('success', 'Reservation placed.');
+
+        return $this->redirectToRoute('app_items_index');
+    }
+
+    #[Route('/items/{id}/return', name: 'app_items_return', methods: ['POST'])]
+    public function returnItem(string $id, Request $request): Response
+    {
+        if (! $this->isCsrfTokenValid('submit', $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('app_items_index');
+        }
+
         ($this->returnItem)(ItemId::fromString($id));
 
         $this->addFlash('success', 'Item returned.');
@@ -210,6 +241,32 @@ final class ItemController extends AbstractController
                 RenewLoanType::class,
                 null,
                 ['action' => $this->generateUrl('app_items_renew', ['id' => $row->itemId])],
+            )->createView();
+        }
+
+        return $forms;
+    }
+
+    /**
+     * One reservation form per lent item, same naming scheme as the lend/renew forms.
+     *
+     * @param  ItemRow[]  $items
+     * @return array<string, FormView>
+     */
+    private function reserveForms(array $items): array
+    {
+        $forms = [];
+
+        foreach ($items as $row) {
+            if (ItemStatus::Lent->value !== $row->status) {
+                continue;
+            }
+
+            $forms[$row->itemId] = $this->forms->createNamed(
+                'reserve_'.$row->itemId,
+                ReserveItemType::class,
+                null,
+                ['action' => $this->generateUrl('app_items_reserve', ['id' => $row->itemId])],
             )->createView();
         }
 

@@ -28,7 +28,7 @@ final class ItemControllerTest extends WebTestCase
         $client->request('GET', '/items/new');
         self::assertResponseIsSuccessful();
 
-        $client->submitForm('Register', ['register_item[title]' => 'Ladder']);
+        $client->submitForm('Salvar Item', ['register_item[title]' => 'Ladder']);
 
         self::assertResponseRedirects('/items');
         $client->followRedirect();
@@ -42,7 +42,7 @@ final class ItemControllerTest extends WebTestCase
         $client = $this->clientWithSchema();
 
         $client->request('GET', '/items/new');
-        $client->submitForm('Register', ['register_item[title]' => '']);
+        $client->submitForm('Salvar Item', ['register_item[title]' => '']);
 
         self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
         self::assertStringContainsString('This value should not be blank.', (string) $client->getResponse()->getContent());
@@ -66,7 +66,7 @@ final class ItemControllerTest extends WebTestCase
         // Arrange
         $client = $this->clientWithSchema();
         $this->seedAvailable('item-1', 'Drill');
-        $this->seedLent('item-2', 'Ladder', 'borrower-1', '2026-02-08 09:00:00');
+        $this->seedLent('item-2', 'Ladder', 'borrower-1', '2026-02-20 09:00:00');
 
         // Act
         $client->request('GET', '/items');
@@ -75,10 +75,10 @@ final class ItemControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('table', 'Drill');
         self::assertSelectorTextContains('table', 'Ladder');
-        self::assertSelectorTextContains('table', 'Available');
-        self::assertSelectorTextContains('table', 'Lent');
+        self::assertSelectorTextContains('table', 'Disponível');
+        self::assertSelectorTextContains('table', 'Emprestado');
         self::assertSelectorTextContains('table', 'borrower-1');
-        self::assertSelectorTextContains('table', '2026-02-08');
+        self::assertSelectorTextContains('table', '20/02/2026');
     }
 
     public function test_overdue_filter_lists_only_late_items(): void
@@ -97,7 +97,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertSelectorTextContains('table', 'Late drill');
         self::assertSelectorTextNotContains('table', 'On time ladder');
         self::assertSelectorTextNotContains('table', 'Saw');
-        self::assertSelectorTextContains('table', 'day(s) late');
+        self::assertSelectorTextContains('table', 'dia(s)');
     }
 
     public function test_lending_an_available_item_updates_the_read_model(): void
@@ -111,6 +111,7 @@ final class ItemControllerTest extends WebTestCase
             'lend_item-1' => [
                 'borrowerId' => 'borrower-9',
                 'dueAt'      => '2026-02-20',
+                '_token'     => $this->csrfToken($client),
             ],
         ]);
 
@@ -137,6 +138,7 @@ final class ItemControllerTest extends WebTestCase
         $client->request('POST', '/items/item-1/renewals', [
             'renew_item-1' => [
                 'newDueAt' => '2026-02-20',
+                '_token'   => $this->csrfToken($client),
             ],
         ]);
 
@@ -159,7 +161,7 @@ final class ItemControllerTest extends WebTestCase
         $this->seedLent('item-1', 'Drill', 'borrower-1', '2026-02-08 09:00:00');
 
         // Act
-        $client->request('POST', '/items/item-1/return');
+        $client->request('POST', '/items/item-1/return', ['_token' => $this->csrfToken($client)]);
 
         // Assert
         self::assertResponseRedirects('/items');
@@ -184,6 +186,7 @@ final class ItemControllerTest extends WebTestCase
             'lend_item-1' => [
                 'borrowerId' => 'borrower-2',
                 'dueAt'      => '2026-02-20',
+                '_token'     => $this->csrfToken($client),
             ],
         ]);
 
@@ -208,6 +211,7 @@ final class ItemControllerTest extends WebTestCase
             'lend_item-1' => [
                 'borrowerId' => 'borrower-1',
                 'dueAt'      => '2026-02-09',
+                '_token'     => $this->csrfToken($client),
             ],
         ]);
 
@@ -233,6 +237,21 @@ final class ItemControllerTest extends WebTestCase
         (new SchemaTool($entityManager))->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
 
         return $client;
+    }
+
+    /**
+     * Forms share the "submit" CSRF token id, so any rendered form provides the value
+     * for the direct POSTs in these tests.
+     */
+    private function csrfToken(KernelBrowser $client): string
+    {
+        $crawler = $client->request('GET', '/items/new');
+
+        // Direct POSTs below would otherwise inherit /items/new as the Referer, and the
+        // exception subscriber redirects back to the Referer.
+        $client->setServerParameter('HTTP_REFERER', 'http://localhost/items');
+
+        return (string) $crawler->filter('input[name="register_item[_token]"]')->attr('value');
     }
 
     private function items(): DoctrineItemRepository

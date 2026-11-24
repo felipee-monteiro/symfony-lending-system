@@ -17,6 +17,9 @@
                     <a href="{{ path('app_items_new') }}" class="transition-colors hover:text-foreground">
                         Register item
                     </a>
+                    <a href="{{ path('app_reservations_index') }}" class="transition-colors hover:text-foreground">
+                        Minhas Reservas
+                    </a>
                 </nav>
             </div>
         </header>
@@ -27,7 +30,7 @@
             {# Flash Messages estilo Alert do shadcn #}
             <div class="space-y-4 mb-6">
                 {% for message in app.flashes('success') %}
-                    <div class="relative w-full rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 [&>svg]:text-green-600" role="alert">
+                    <div class="flash relative w-full rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 [&>svg]:text-green-600" role="alert">
                         <div class="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
                             <span class="font-medium">Sucesso</span>
@@ -37,7 +40,7 @@
                 {% endfor %}
 
                 {% for message in app.flashes('error') %}
-                    <div class="relative w-full rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 [&>svg]:text-red-600" role="alert">
+                    <div class="flash flash--error relative w-full rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 [&>svg]:text-red-600" role="alert">
                         <div class="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
                             <span class="font-medium">Erro</span>

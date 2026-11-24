@@ -21,6 +21,7 @@ final readonly class ItemRow
         public ?DateTimeImmutable $lentAt,
         public ?DateTimeImmutable $effectiveDueAt,
         public ?int $daysLate,
+        public int $queueCount = 0,
     ) {}
 
     /**
@@ -44,6 +45,7 @@ final readonly class ItemRow
             daysLate: $borrowerId !== null && $effectiveDueAt !== null
                 ? OverdueDays::calculate($effectiveDueAt, $startOfToday)
                 : null,
+            queueCount: (int) ($row['queue_count'] ?? 0),
         );
     }
 

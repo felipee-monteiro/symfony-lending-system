@@ -15,6 +15,7 @@
                         <twig:Field:Label for="{{ form.title.vars.id }}">Título do Item</twig:Field:Label>
                         {# O componente Input já tem todo o CSS do Shadcn #}
                         {{ form_widget(form.title, { attr: { class: 'flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base' } }) }}
+                        {{ form_errors(form.title) }}
                         {# Se houver erro, o componente Field pode exibi-lo #}
                     </twig:Field>
 

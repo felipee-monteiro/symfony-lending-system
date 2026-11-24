@@ -21,13 +21,14 @@
         "symfony/framework-bundle": "8.1.*",
         "symfony/messenger": "8.1.*",
         "symfony/runtime": "8.1.*",
+        "symfony/security-csrf": "8.1.*",
         "symfony/twig-bundle": "8.1.*",
         "symfony/uid": "8.1.*",
         "symfony/ux-twig-component": "^3.5",
         "symfony/validator": "8.1.*",
         "symfony/yaml": "8.1.*",
         "symfonycasts/tailwind-bundle": "^1.0",
-        "tales-from-a-dev/twig-tailwind-extra": "^1.3.0",
+        "tales-from-a-dev/twig-tailwind-extra": "*",
         "twig/extra-bundle": "^3.31",
         "twig/html-extra": "^3.24.0"
     },
@@ -80,7 +81,9 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
+        ],
+        "test:smoke": "php bin/phpunit tests/Functional/SmokingTest.php",
+        "test:unit": "php bin/phpunit tests/Unit"
     },
     "conflict": {
         "symfony/symfony": "*"

@@ -53,6 +53,15 @@ abstract class ReadModelTestCase extends KernelTestCase
         (new SchemaTool($this->entityManager))->createSchema(
             $this->entityManager->getMetadataFactory()->getAllMetadata(),
         );
+
+        // The SchemaTool cannot emit a partial index on SQLite and falls back to a full
+        // unique index. Replace it with the one the migration declares so a cancelled
+        // reservation does not block the same borrower from queuing again.
+        $this->connection->executeStatement('DROP INDEX IF EXISTS uniq_reservation_active');
+        $this->connection->executeStatement(
+            'CREATE UNIQUE INDEX uniq_reservation_active ON reservation (item_id, borrower_id) '
+            ."WHERE status IN ('pending', 'notified')",
+        );
     }
 
     protected function saveAvailableItem(string $id, string $title): Item

@@ -38,7 +38,13 @@ final readonly class OverdueItemsQuery
                            COALESCE(
                                (SELECT r.due_at FROM loan_renewal r WHERE r.loan_id = l.id ORDER BY r.id DESC LIMIT 1),
                                l.due_at
-                           ) AS effective_due_at
+                           ) AS effective_due_at,
+                           (
+                               SELECT COUNT(*)
+                               FROM reservation q
+                               WHERE q.item_id = i.id
+                                 AND q.status IN ('pending', 'notified')
+                           ) AS queue_count
                     FROM item i
                     INNER JOIN loan l ON l.item_id = i.id
                     WHERE l.returned_at IS NULL

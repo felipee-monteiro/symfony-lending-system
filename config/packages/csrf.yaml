@@ -1,11 +1,13 @@
-# Enable stateless CSRF protection for forms and logins/logouts
+# CSRF for the server-rendered forms uses the session-backed "submit" token, rendered
+# as a hidden `_token`. Only the (not yet used) login/logout tokens are stateless.
 framework:
     form:
         csrf_protection:
             token_id: submit
 
     csrf_protection:
+        # Forms render a hidden `_token`; they use the session-backed token so a plain
+        # HTML submit works without a JavaScript client sending the stateless header.
         stateless_token_ids:
-            - submit
             - authenticate
             - logout

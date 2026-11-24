@@ -4,55 +4,70 @@ declare(strict_types=1);
 
 namespace App\EventListener\Exceptions;
 
-use LogicException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
-use Throwable;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * Turns an exception into an HTTP response without leaking it to the kernel: JSON for
+ * API clients, a flash message plus redirect for the server-rendered screens.
+ *
+ * The HTTP status is chosen by the subscriber that owns the exception family (state
+ * conflicts are 409, invalid input is 422).
+ */
 final readonly class ResponseStrategy
 {
-    private Throwable $exception;
-
-    private Request $request;
-
     public function __construct(
-        private readonly ExceptionEvent $event
-    ) {
-        $this->exception = $event->getThrowable();
-        $this->request   = $event->getRequest();
-    }
+        private ExceptionEvent $event,
+        private UrlGeneratorInterface $urls,
+        private int $apiStatus,
+    ) {}
 
     public function configure(): void
     {
-        $this->configureApiResponse();
-        $this->configureBagResponse();
-    }
+        $request = $this->event->getRequest();
+        $message = $this->event->getThrowable()->getMessage();
 
-    private function configureApiResponse(): void
-    {
-        if ($this->request->getPreferredFormat() === 'json') {
-            $this->event->setResponse(
-                new JsonResponse(['error' => $this->exception->getMessage()], 409)
-            );
+        if (self::isApiRequest($request)) {
+            $this->event->setResponse(new JsonResponse(['error' => $message], $this->apiStatus));
+
+            return;
         }
+
+        if (! $request->hasSession()) {
+            return;
+        }
+
+        $request->getSession()->getFlashBag()->add('error', $message);
+
+        $this->event->setResponse(new RedirectResponse(self::redirectTarget($request, $this->urls)));
     }
 
-    private function configureBagResponse(): void
+    private static function isApiRequest(Request $request): bool
     {
-        if ($this->request->getPreferredFormat() === 'html') {
-            if ($this->request->hasSession()) {
-                $this->request->getSession()->getFlashBag()->add('error', $this->exception->getMessage());
+        if (str_starts_with($request->getPathInfo(), '/api/')) {
+            return true;
+        }
 
-                $referer = $this->request->headers->get('referer');
+        return $request->getPreferredFormat() === 'json'
+            || str_contains((string) $request->headers->get('Accept'), 'application/json');
+    }
 
-                if ($referer === null) {
-                    throw new LogicException(\sprintf('You MUST set the referer header'));
-                }
+    private static function redirectTarget(Request $request, UrlGeneratorInterface $urls): string
+    {
+        $referer = $request->headers->get('referer');
 
-                $this->event->setResponse(new RedirectResponse($referer));
+        // Never bounce to another host: a forged Referer would be an open redirect.
+        if ($referer !== null && $referer !== '') {
+            $host = parse_url($referer, \PHP_URL_HOST);
+
+            if ($host === null || $host === $request->getHost()) {
+                return $referer;
             }
         }
+
+        return $urls->generate('app_items_index');
     }
 }
