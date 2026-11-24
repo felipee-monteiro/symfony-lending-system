@@ -1,0 +1,115 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Items | Lending System{% endblock %}
+
+{% block body %}
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Itens</h1>
+            <p class="text-sm text-muted-foreground">Gerencie o inventário, empréstimos e devoluções.</p>
+        </div>
+    </div>
+
+    {# Filtros estilo Tabs/Botões do shadcn #}
+    <div class="flex items-center space-x-2 mb-4">
+        {% set currentFilter = filter.value %}
+        {% set filters = {
+            'all': 'Todos',
+            'available': 'Disponíveis',
+            'lent': 'Emprestados',
+            'overdue': 'Atrasados'
+        } %}
+
+        {% for key, label in filters %}
+            <a href="{{ path('app_items_index', {filter: key}) }}"
+               class="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50
+               {{ currentFilter == key
+                    ? 'bg-slate-900 text-slate-50 shadow hover:bg-slate-900/90'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900' }}">
+                {{ label }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if items is empty %}
+        <div class="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto h-10 w-10 text-muted-foreground mb-4"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            <h3 class="mt-2 text-sm font-semibold">Nenhum item encontrado</h3>
+            <p class="mt-1 text-sm text-muted-foreground">Não há itens que correspondam a este filtro.</p>
+        </div>
+    {% else %}
+        {# Componente Table do shadcn #}
+        <div class="rounded-md border bg-white shadow-sm">
+            <table class="w-full caption-bottom text-sm">
+                <thead class="[&_tr]:border-b">
+                    <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Título</th>
+                        <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+                        <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Emprestado para</th>
+                        <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Saída</th>
+                        <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Vencimento</th>
+                        <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Atraso</th>
+                        <th class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="[&_tr:last-child]:border-0">
+                {% for row in items %}
+                    <tr class="border-b transition-colors hover:bg-slate-50/50 data-[state=selected]:bg-slate-50">
+                        <td class="p-4 align-middle font-medium">{{ row.title }}</td>
+                        <td class="p-4 align-middle">
+                            {# Componente Badge do shadcn #}
+                            {% if row.status == 'available' %}
+                                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-800">Disponível</div>
+                            {% elseif row.daysLate > 0 %}
+                                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-800">Atrasado</div>
+                            {% else %}
+                                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-slate-100 text-slate-800">Emprestado</div>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 align-middle">{{ row.borrowerId ?? '—' }}</td>
+                        <td class="p-4 align-middle text-muted-foreground">{{ row.lentAt ? row.lentAt|date('d/m/Y') : '—' }}</td>
+                        <td class="p-4 align-middle text-muted-foreground">{{ row.effectiveDueAt ? row.effectiveDueAt|date('d/m/Y') : '—' }}</td>
+                        <td class="p-4 align-middle">
+                            {% if row.daysLate is null %}
+                                <span class="text-muted-foreground">—</span>
+                            {% elseif row.daysLate == 0 %}
+                                <span class="text-green-600 font-medium text-xs">Em dia</span>
+                            {% else %}
+                                <span class="text-red-600 font-medium text-xs">{{ row.daysLate }} dia(s)</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 align-middle text-right">
+                            {% if row.status == 'available' %}
+                                {% set lendForm = lendForms[row.itemId] %}
+                                {{ form_start(lendForm, {attr: {class: 'flex items-center justify-end gap-2'}}) }}
+                                    {{ form_widget(lendForm.borrowerId, {attr: {placeholder: 'Quem?', class: 'flex h-9 w-28 rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900'}}) }}
+                                    {{ form_widget(lendForm.dueAt, {attr: {class: 'flex h-9 w-36 rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900'}}) }}
+                                    <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md bg-slate-900 px-3 text-sm font-medium text-slate-50 shadow transition-colors hover:bg-slate-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
+                                        Emprestar
+                                    </button>
+                                {{ form_end(lendForm) }}
+                            {% else %}
+                                <div class="flex items-center justify-end gap-2">
+                                    <form method="post" action="{{ path('app_items_return', {id: row.itemId}) }}">
+                                        <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
+                                            Devolver
+                                        </button>
+                                    </form>
+
+                                    {% set renewForm = renewForms[row.itemId] %}
+                                    {{ form_start(renewForm, {attr: {class: 'flex items-center gap-2'}}) }}
+                                        {{ form_widget(renewForm.newDueAt, {attr: {class: 'flex h-9 w-36 rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900'}}) }}
+                                        <button type="submit" class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50">
+                                            Renovar
+                                        </button>
+                                    {{ form_end(renewForm) }}
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}

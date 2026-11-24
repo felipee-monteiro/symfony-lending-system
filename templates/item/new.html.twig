@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="max-w-md mx-auto mt-10">
+        <twig:Card>
+            <twig:Card:Header>
+                <twig:Card:Title>Novo Item</twig:Card:Title>
+                <twig:Card:Description>Adicione um novo item ao inventário.</twig:Card:Description>
+            </twig:Card:Header>
+
+            <twig:Card:Content>
+                {{ form_start(form) }}
+
+                    <twig:Field>
+                        <twig:Field:Label for="{{ form.title.vars.id }}">Título do Item</twig:Field:Label>
+                        {# O componente Input já tem todo o CSS do Shadcn #}
+                        {{ form_widget(form.title, { attr: { class: 'flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base' } }) }}
+                        {# Se houver erro, o componente Field pode exibi-lo #}
+                    </twig:Field>
+
+                    <twig:Button type="submit" class="w-full mt-4">Salvar Item</twig:Button>
+
+                {{ form_end(form) }}
+            </twig:Card:Content>
+        </twig:Card>
+    </div>
+{% endblock %}
