@@ -42,7 +42,7 @@ final readonly class ResponseStrategy
 
         $request->getSession()->getFlashBag()->add('error', $message);
 
-        $this->event->setResponse(new RedirectResponse(self::redirectTarget($request, $this->urls)));
+        $this->event->setResponse(new RedirectResponse($this->redirectTarget($request)));
     }
 
     private static function isApiRequest(Request $request): bool
@@ -55,7 +55,7 @@ final readonly class ResponseStrategy
             || str_contains((string) $request->headers->get('Accept'), 'application/json');
     }
 
-    private static function redirectTarget(Request $request, UrlGeneratorInterface $urls): string
+    private function redirectTarget(Request $request): string
     {
         $referer = $request->headers->get('referer');
 
@@ -68,6 +68,6 @@ final readonly class ResponseStrategy
             }
         }
 
-        return $urls->generate('app_items_index');
+        return $this->urls->generate('app_items_index');
     }
 }
